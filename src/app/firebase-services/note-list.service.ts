@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, doc, collectionData, onSnapshot, addDoc } from '@angular/fire/firestore';
+import { Firestore, collection, doc, onSnapshot, addDoc, updateDoc } from '@angular/fire/firestore';
 import { Note } from '../interfaces/note.interface';
 
 @Injectable({
@@ -20,9 +20,38 @@ export class NoteListService {
   }
 
 
+  async updateNote(note: Note) {
+    if (note.id) {
+      let docRef = this.getSingleDocRef(this.getColIdFromNote(note), note.id);
+      await updateDoc(docRef, this.getCleanJSON(note)).catch(
+        (err) => console.error(err)
+      )
+    }
+  }
+
+
+  getCleanJSON(note: Note): {} {
+    return {
+      type: note.type,
+      title: note.title,
+      content: note.content,
+      marked: note.marked
+    }
+  }
+
+
+  getColIdFromNote(note: Note) {
+    if (note.type === 'note') {
+      return 'notes';
+    } else {
+      return 'trash'
+    }
+  }
+
+
   async addNote(item: {}) {
     await addDoc(this.getNotesRef(), item).catch(
-      (err) => console.error(err) 
+      (err) => console.error(err)
     ).then(
       (docRef) => console.log("Document written with ID: ", docRef?.id)
     )
@@ -76,7 +105,7 @@ export class NoteListService {
   }
 
 
-  // getSingleDocRef(colId: string, docId: string) {
-  //   return doc(this.firestore, colId, docId);
-  // }
+  getSingleDocRef(colId: string, docId: string) {
+    return doc(this.firestore, colId, docId);
+  }
 }
