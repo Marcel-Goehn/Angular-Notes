@@ -133,8 +133,20 @@
         </div>
     </div>
     <div>
+        @if(this.status === 'notes') {
         @for (note of getList(); track note) {
-            <app-note [note]="note"></app-note>
-          }
+        <app-note [note]="note"></app-note>
+        }
+        @empty {
+            <p>Noch keine Notizen vorhanden</p>
+        }
+        } @else {
+            @for(note of getTrashList(); track note) {
+                <app-note [note]="note"></app-note>
+            }
+            @empty {
+                <p>Keine Notizen bisher im Papierkorb</p>
+            }
+        }
     </div>
 </div>
