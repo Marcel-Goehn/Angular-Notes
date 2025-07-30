@@ -1,22 +1,33 @@
-import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Firestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, limit, where } from '@angular/fire/firestore';
 import { Note } from '../interfaces/note.interface';
 
 @Injectable({
   providedIn: 'root'
 })
-export class NoteListService {
+export class NoteListService implements OnDestroy {
 
   trashNotes: Note[] = [];
   normalNotes: Note[] = [];
+  markedNormalNotes: Note[] = [];
 
   firestore = inject(Firestore);
   unsubTrash;
   unsubNote;
+  unsubMarkedNote;
+  
 
   constructor() {
     this.unsubTrash = this.subTrashList();
     this.unsubNote = this.subNotesList();
+    this.unsubMarkedNote = this.subMarkedNotesList();
+  }
+
+
+  ngOnDestroy() {
+      this.unsubTrash();
+      this.unsubNote();
+      this.unsubMarkedNote();
   }
 
 
@@ -65,12 +76,6 @@ export class NoteListService {
   }
 
 
-  ngOnDestroy() {
-    this.unsubTrash();
-    this.unsubNote();
-  }
-
-
   subTrashList() {
     return onSnapshot(this.getTrashRef(), (list) => {
       this.trashNotes = [];
@@ -82,13 +87,35 @@ export class NoteListService {
 
 
   subNotesList() {
-    return onSnapshot(this.getNotesRef(), (list) => {
+    const q = query(this.getNotesRef(), limit(100));
+    return onSnapshot(q, (list) => {
       this.normalNotes = [];
       list.forEach(element => {
         this.normalNotes.push(this.setNoteObject(element.data(), element.id));
       })
     });
   }
+
+
+  subMarkedNotesList() {
+    const q = query(this.getNotesRef(), where('marked', '==', true), limit(100));
+    return onSnapshot(q, (list) => {
+      this.markedNormalNotes = [];
+      list.forEach(element => {
+        this.markedNormalNotes.push(this.setNoteObject(element.data(), element.id));
+      })
+    });
+  }
+
+
+  // subNotesList() {
+  //   return onSnapshot(this.getNotesRef(), (list) => {
+  //     this.normalNotes = [];
+  //     list.forEach(element => {
+  //       this.normalNotes.push(this.setNoteObject(element.data(), element.id));
+  //     })
+  //   });
+  // }
 
 
   setNoteObject(obj: any, id: string): Note {
